@@ -2,6 +2,7 @@ import React from 'react';
 import ParkingGrid from './components/ParkingGrid';
 import GateControls from './components/GateControls';
 import StressTest from './components/StressTest';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
   return (
@@ -52,6 +53,19 @@ function App() {
             <StressTest />
           </div>
         </aside>
+
+        {/* Bottom Full-Width Row: System Audit Logs */}
+        <section className="lg:col-span-3 flex flex-col gap-4 mt-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              <span>Database Audit Log</span>
+            </h2>
+            <span className="text-xs text-slate-400 font-mono">Live Secure Tracking</span>
+          </div>
+          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm shadow-xl overflow-hidden">
+            <AdminDashboard />
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
