@@ -5,9 +5,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   // Replace with your actual Render backend URL!
-  const API_URL = 'https://parklock-engine-api.onrender.com/api/admin/audit-logs';
-
-  const fetchLogs = async () => {
+const API_URL = 'https://parklock-engine-backend.onrender.com/api/v1/admin/audit-logs';  const fetchLogs = async () => {
     try {
       const response = await fetch(API_URL);
       if (!response.ok) {
