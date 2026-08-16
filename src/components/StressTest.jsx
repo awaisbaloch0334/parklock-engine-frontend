@@ -16,30 +16,19 @@ const StressTest = () => {
 
   const runConcurrencyTest = async () => {
     setIsTesting(true);
-    setLogs(['Initializing fully randomized, unbiased traffic spike...']);
+    setLogs(['Initializing completely unconstrained chaotic traffic spike...']);
     
-    // Create an unweighted distribution pool: 12 Standard, 4 EV, 4 Disabled (representing a realistic garage ratio)
-    const categoryPool = [
-      'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD',
-      'EV_CHARGING', 'EV_CHARGING', 'EV_CHARGING', 'EV_CHARGING',
-      'DISABLED_ACCESS', 'DISABLED_ACCESS', 'DISABLED_ACCESS', 'DISABLED_ACCESS'
-    ];
+    const spotTypes = ['STANDARD', 'EV_CHARGING', 'DISABLED_ACCESS'];
 
-    // Shuffle the pool completely on every click using Fisher-Yates shuffle
-    const shuffledPool = [...categoryPool];
-    for (let i = shuffledPool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledPool[i], shuffledPool[j]] = [shuffledPool[j], shuffledPool[i]];
-    }
-
-    // Create 20 asynchronous requests with randomized traffic jitter and shuffled categories
-    const requests = Array.from({ length: 20 }, async (_, index) => {
-      const randomDelay = Math.floor(Math.random() * 400);
+    // Create 20 asynchronous requests with randomized traffic jitter and pure random types
+    const requests = Array.from({ length: 20 }, async () => {
+      // 1. Random delay between 0ms to 500ms to scatter thread arrival times
+      const randomDelay = Math.floor(Math.random() * 500);
       await new Promise(resolve => setTimeout(resolve, randomDelay));
 
-      // Pick from the randomized shuffled pool instead of predictable math
-      const randomType = shuffledPool[index];
-      const randomPlate = `MIX-${Math.floor(1000 + Math.random() * 9000)}`;
+      // 2. Pure random selection for vehicle type on every single request
+      const randomType = spotTypes[Math.floor(Math.random() * spotTypes.length)];
+      const randomPlate = `RND-${Math.floor(1000 + Math.random() * 9000)}`;
       
       try {
         const res = await fetch(`${API_BASE_URL}/api/v1/parking/park`, {
@@ -98,7 +87,7 @@ const StressTest = () => {
     <div className="p-4 bg-slate-800 text-white shadow-sm rounded-xl mt-6 border border-slate-700">
       <h3 className="font-bold mb-2 text-lg text-indigo-400">System Stress Diagnostics</h3>
       <p className="text-sm text-slate-300 mb-4">
-        Fires 20 asynchronous requests using a Fisher-Yates shuffled distribution pool and traffic jitter.
+        Fires 20 asynchronous requests using pure random category generation and staggered arrival timing.
       </p>
       
       <div className="flex flex-col gap-3">
