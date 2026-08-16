@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from "@clerk/clerk-react";
 
 const AdminDashboard = () => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Navigation hook for the logout redirect
-  const navigate = useNavigate();
+  // Properly destructure getToken from useAuth()
+  const { getToken } = useAuth();
 
-  // Replace with your actual Render backend URL!
   const API_URL = 'https://parklock-engine-backend.onrender.com/api/v1/admin/audit-logs'; 
 
   const fetchLogs = async () => {
     try {
-      const response = await fetch(API_URL);
+      // 1. Get the secure JWT token from Clerk
+      const token = await getToken();
+
+      // 2. Attach the token in the Authorization header
+      const response = await fetch(API_URL, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -29,17 +38,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchLogs();
     
-    // Optional: Auto-refresh the logs every 5 seconds so you 
-    // don't have to refresh the page after parking a car!
+    // Auto-refresh the logs every 5 seconds
     const interval = setInterval(fetchLogs, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  // Secure Logout Function
-  const handleLogout = () => {
-    localStorage.removeItem('isAdminLoggedIn'); // Destroy the session
-    navigate('/admin/login'); // Kick back to the login screen
-  };
 
   if (loading) {
     return <div className="p-8 text-center text-slate-400 font-mono animate-pulse">Fetching secure database logs...</div>;
@@ -47,17 +49,11 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Dashboard Header & Logout Button */}
+      {/* Dashboard Header Status */}
       <div className="flex justify-between items-center px-1">
         <span className="text-sm font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-          Real-time Connection Active
+          Real-time Connection Active &bull; Clerk Authenticated
         </span>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-sm font-medium transition-colors"
-        >
-          Secure Logout
-        </button>
       </div>
 
       {/* Database Table */}
