@@ -16,30 +16,33 @@ const StressTest = () => {
 
   const runConcurrencyTest = async () => {
     setIsTesting(true);
-    setLogs(['Initializing dynamic massive concurrency payload...']);
+    setLogs(['Initializing chaotic high-entropy concurrency spike...']);
     
     const spotTypes = ['STANDARD', 'EV_CHARGING', 'DISABLED_ACCESS'];
 
-    const requests = Array.from({ length: 20 }, () => {
-      // 1. Dynamically generate a completely random vehicle type
+    // Create 20 asynchronous requests with randomized traffic jitter
+    const requests = Array.from({ length: 20 }, async (_, index) => {
+      // 1. Random delay between 0ms to 400ms so they don't fire in a strict robotic block
+      const randomDelay = Math.floor(Math.random() * 400);
+      await new Promise(resolve => setTimeout(resolve, randomDelay));
+
+      // 2. Fully randomized vehicle type selection
       const randomType = spotTypes[Math.floor(Math.random() * spotTypes.length)];
       
-      // 2. Dynamically generate a random license plate (e.g., DYN-4821)
-      const randomPlate = `DYN-${Math.floor(1000 + Math.random() * 9000)}`;
+      // 3. Fully randomized license plate numbers
+      const randomPlate = `CHAOS-${Math.floor(1000 + Math.random() * 9000)}`;
       
-      return fetch(`${API_BASE_URL}/api/v1/parking/park`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ licensePlate: randomPlate, vehicleType: randomType }),
-      })
-      .then(async (res) => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/parking/park`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ licensePlate: randomPlate, vehicleType: randomType }),
+        });
         const data = await res.json();
-        // Pass the random plate down the promise chain so we can log it
         return { status: res.status, data, plate: randomPlate };
-      })
-      .catch(() => ({ status: 500, data: { message: 'Network Failure' }, plate: randomPlate }));
+      } catch (err) {
+        return { status: 500, data: { message: 'Network Failure' }, plate: randomPlate };
+      }
     });
 
     const results = await Promise.all(requests);
@@ -86,7 +89,7 @@ const StressTest = () => {
     <div className="p-4 bg-slate-800 text-white shadow-sm rounded-xl mt-6 border border-slate-700">
       <h3 className="font-bold mb-2 text-lg text-indigo-400">System Stress Diagnostics</h3>
       <p className="text-sm text-slate-300 mb-4">
-        Fires 20 simultaneous, dynamically generated API payloads to verify database locks.
+        Fires 20 asynchronous requests with randomized traffic jitter to simulate organic concurrency spikes.
       </p>
       
       <div className="flex flex-col gap-3">
