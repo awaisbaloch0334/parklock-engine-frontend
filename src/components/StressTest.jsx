@@ -16,21 +16,30 @@ const StressTest = () => {
 
   const runConcurrencyTest = async () => {
     setIsTesting(true);
-    setLogs(['Initializing chaotic high-entropy concurrency spike...']);
+    setLogs(['Initializing fully randomized, unbiased traffic spike...']);
     
-    const spotTypes = ['STANDARD', 'EV_CHARGING', 'DISABLED_ACCESS'];
+    // Create an unweighted distribution pool: 12 Standard, 4 EV, 4 Disabled (representing a realistic garage ratio)
+    const categoryPool = [
+      'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD', 'STANDARD',
+      'EV_CHARGING', 'EV_CHARGING', 'EV_CHARGING', 'EV_CHARGING',
+      'DISABLED_ACCESS', 'DISABLED_ACCESS', 'DISABLED_ACCESS', 'DISABLED_ACCESS'
+    ];
 
-    // Create 20 asynchronous requests with randomized traffic jitter
+    // Shuffle the pool completely on every click using Fisher-Yates shuffle
+    const shuffledPool = [...categoryPool];
+    for (let i = shuffledPool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledPool[i], shuffledPool[j]] = [shuffledPool[j], shuffledPool[i]];
+    }
+
+    // Create 20 asynchronous requests with randomized traffic jitter and shuffled categories
     const requests = Array.from({ length: 20 }, async (_, index) => {
-      // 1. Random delay between 0ms to 400ms so they don't fire in a strict robotic block
       const randomDelay = Math.floor(Math.random() * 400);
       await new Promise(resolve => setTimeout(resolve, randomDelay));
 
-      // 2. Fully randomized vehicle type selection
-      const randomType = spotTypes[Math.floor(Math.random() * spotTypes.length)];
-      
-      // 3. Fully randomized license plate numbers
-      const randomPlate = `CHAOS-${Math.floor(1000 + Math.random() * 9000)}`;
+      // Pick from the randomized shuffled pool instead of predictable math
+      const randomType = shuffledPool[index];
+      const randomPlate = `MIX-${Math.floor(1000 + Math.random() * 9000)}`;
       
       try {
         const res = await fetch(`${API_BASE_URL}/api/v1/parking/park`, {
@@ -39,9 +48,9 @@ const StressTest = () => {
           body: JSON.stringify({ licensePlate: randomPlate, vehicleType: randomType }),
         });
         const data = await res.json();
-        return { status: res.status, data, plate: randomPlate };
+        return { status: res.status, data, plate: randomPlate, type: randomType };
       } catch (err) {
-        return { status: 500, data: { message: 'Network Failure' }, plate: randomPlate };
+        return { status: 500, data: { message: 'Network Failure' }, plate: randomPlate, type: randomType };
       }
     });
 
@@ -52,9 +61,9 @@ const StressTest = () => {
     const newLogs = results.map((res) => {
       if (res.status === 201 || res.status === 200) {
         if (res.data.ticketNumber) successfulTickets.push(res.data.ticketNumber);
-        return `✅ [${res.plate}] Success: Parked in Spot #${res.data.spotId}`;
+        return `✅ [${res.plate} | ${res.type}] Success: Parked in Spot #${res.data.spotId}`;
       }
-      return `❌ [${res.plate}] Rejected: ${res.data.message || 'Capacity Reached'}`;
+      return `❌ [${res.plate} | ${res.type}] Rejected: ${res.data.message || 'Capacity Reached'}`;
     });
 
     setSavedTickets(successfulTickets);
@@ -89,7 +98,7 @@ const StressTest = () => {
     <div className="p-4 bg-slate-800 text-white shadow-sm rounded-xl mt-6 border border-slate-700">
       <h3 className="font-bold mb-2 text-lg text-indigo-400">System Stress Diagnostics</h3>
       <p className="text-sm text-slate-300 mb-4">
-        Fires 20 asynchronous requests with randomized traffic jitter to simulate organic concurrency spikes.
+        Fires 20 asynchronous requests using a Fisher-Yates shuffled distribution pool and traffic jitter.
       </p>
       
       <div className="flex flex-col gap-3">
