@@ -16,35 +16,42 @@ const StressTest = () => {
 
   const runConcurrencyTest = async () => {
     setIsTesting(true);
-    setLogs(['Initializing massive concurrency payload...']);
+    setLogs(['Initializing dynamic massive concurrency payload...']);
     
-    const requests = Array.from({ length: 20 }, (_, i) => {
-      const vehicleType = i % 3 === 0 ? 'EV_CHARGING' : (i % 5 === 0 ? 'DISABLED_ACCESS' : 'STANDARD');
+    const spotTypes = ['STANDARD', 'EV_CHARGING', 'DISABLED_ACCESS'];
+
+    const requests = Array.from({ length: 20 }, () => {
+      // 1. Dynamically generate a completely random vehicle type
+      const randomType = spotTypes[Math.floor(Math.random() * spotTypes.length)];
+      
+      // 2. Dynamically generate a random license plate (e.g., DYN-4821)
+      const randomPlate = `DYN-${Math.floor(1000 + Math.random() * 9000)}`;
       
       return fetch(`${API_BASE_URL}/api/v1/parking/park`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ licensePlate: `TEST-${1000 + i}`, vehicleType }),
+        body: JSON.stringify({ licensePlate: randomPlate, vehicleType: randomType }),
       })
       .then(async (res) => {
         const data = await res.json();
-        return { status: res.status, data };
+        // Pass the random plate down the promise chain so we can log it
+        return { status: res.status, data, plate: randomPlate };
       })
-      .catch(() => ({ status: 500, data: { message: 'Network Failure' } }));
+      .catch(() => ({ status: 500, data: { message: 'Network Failure' }, plate: randomPlate }));
     });
 
     const results = await Promise.all(requests);
     
     const successfulTickets = [...savedTickets]; 
     
-    const newLogs = results.map((res, index) => {
+    const newLogs = results.map((res) => {
       if (res.status === 201 || res.status === 200) {
         if (res.data.ticketNumber) successfulTickets.push(res.data.ticketNumber);
-        return `✅ [T-${1000 + index}] Success: Parked in Spot #${res.data.spotId}`;
+        return `✅ [${res.plate}] Success: Parked in Spot #${res.data.spotId}`;
       }
-      return `❌ [T-${1000 + index}] Rejected: ${res.data.message || 'Capacity Reached'}`;
+      return `❌ [${res.plate}] Rejected: ${res.data.message || 'Capacity Reached'}`;
     });
 
     setSavedTickets(successfulTickets);
@@ -79,7 +86,7 @@ const StressTest = () => {
     <div className="p-4 bg-slate-800 text-white shadow-sm rounded-xl mt-6 border border-slate-700">
       <h3 className="font-bold mb-2 text-lg text-indigo-400">System Stress Diagnostics</h3>
       <p className="text-sm text-slate-300 mb-4">
-        Fires 20 simultaneous API payloads to verify database locks.
+        Fires 20 simultaneous, dynamically generated API payloads to verify database locks.
       </p>
       
       <div className="flex flex-col gap-3">

@@ -13,7 +13,11 @@ const ParkingGrid = () => {
       if (!response.ok) throw new Error('Network response was not ok');
       
       const data = await response.json();
-      setSpots(data);
+      
+      // FIX: Sort the bays by their ID so they never jump around!
+      const sortedData = data.sort((a, b) => a.id - b.id);
+      
+      setSpots(sortedData);
       setLoading(false);
     } catch (err) {
       setError('Failed to connect to ParkLock Engine backend.');
